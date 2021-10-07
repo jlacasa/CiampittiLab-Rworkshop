@@ -1,0 +1,32 @@
+---
+title: "Assignment 5 - Linear models"
+author: "J. Lacasa"
+date: "10/07/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Guidelines  
+
+Use R markdown to complete your assignment. Please provide all the code to make your work reproducible.  
+**Extra**: set image size to 6'' x 6''. (see [here](https://r4ds.had.co.nz/graphics-for-communication.html#figure-sizing))  
+
+## 1. Chickpea    
+Load the "Data file of Heat tolerance of chickpea genotypes in thermal zone of Ethiopia.xlsx" dataset.  
+With that dataset, answer the following questions and visualize your results using ggplot:  
+
+**a.** Is there an effect of treatment on (a.1) Yield, (a2) day of first flowering, (a3) Harvest Index? Do pairwise mean comparisons.    
+
+**b.** Is there a relationship between seed weight and yield?  
+
+**c.** How does GFP influence yield?    
+
+## 2. FAO - model selection  
+Use the FAO dataset that combines crop and climate data (from day 3 - data wrangling) and build 4 different models. Compare them using the metrics you consider the best and select the best one. Visualize the data.  
+
+## 3. Legume - model selection   
+Load the "legume.csv" file (find the data paper [here](https://www.nature.com/articles/sdata201684)). Someone says that the best model to explain variations in yield includes species, total aerial fixed N, total aerial biomass, and growing season. Is he right or partially right? Visualize the data.    
+
+
