@@ -1,0 +1,40 @@
+---
+title: "XPolaris"
+author: "J. Lacasa"
+date: "9/30/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(XPolaris)
+```
+
+```{r fc example}
+my_convert <- function(kg.ha) {
+  kg.ha/67.19
+} 
+
+my_convert(1000)
+
+```
+
+```{r xplot}
+exkansas # show the example for KS
+
+# Now create a practice data frame with  the same format as "exkansas"
+nacho <- data.frame(ID = c("Ashland", "Topeka"), 
+                    lat =c(39.08, 39.077),
+                    long = c(- 96.37, - 95.768))
+xplot(nacho, localPath = getwd()) # check that the locations are OK
+```
+
+```{r ximages}
+nacho2 <- ximages(nacho,
+                  variables = c("om", "clay"),
+                  statistics = c("mean"),
+                  layersdepths = c("0_5"),
+                  localPath = getwd()) #
+xsoil(nacho2, getwd())
+```
+
