@@ -1,0 +1,114 @@
+---
+title: 'Day 6: Linear models cont.'
+author: "J. Lacasa"
+date: "10/13/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Packages  
+
+## Review  
+
+```{r data}
+usda <- read.csv("../data/USDAsurvey_00-18.csv")
+legume <- read.csv("../data/legume.csv")
+```
+
+## Exploratory data analysis  
+
+## Linear Mixed Effects  
+
+**Fixed effects**  
+Effect ON the variable. (not affecting the error, just the expected Y value).   
+
+**Random effects**  
+* NOT AFFECTING the expected Y value.  
+* Effect on the “variability” of the variable (Sigma).  
+* Most basic component is the RESIDUALS (e) given by replications/repetitions.  
+* Also BLOCKS.  
+
+***  
+```{r Expected marginal means}
+options('contrasts')
+options(contrasts = c("contr.sum", "contr.poly")) # set the contrasts
+options('contrasts')
+
+usda_mixed <- lmer(Value ~ State + (1|fYear), data = usda)
+
+usda_mixed_means <- emmeans(usda_mixed, #~State|Year,
+                      specs = pairwise ~ State)
+
+```
+
+***  
+
+Random effects are iid ~ N(0,var1)  
+```{r QQ plot for random effects}
+randef <- ranef(usda_mixed)[[1]] 
+
+randef %>% 
+  ggplot(aes(sample=`(Intercept)`))+
+  stat_qq()+
+  stat_qq_line()
+```
+
+***  
+
+```{r pairwise comp}
+#Set up a compact letter display of all pair-wise comparisons
+cld(usda_mixed_means,
+    adjust = "none",
+    Letters = letters,
+    reversed = TRUE,
+    comparisons = TRUE) -> usda_mixed_cld
+
+# default plot 
+
+# ggplot -> necessary steps ?
+```
+
+***  
+
+```{r mixedeff}
+usda_mixed_cld <- usda_mixed_cld %>% as.data.frame() 
+
+usda_mixed_cld %>%
+  ggplot(aes(emmean, State))+
+  geom_point()+
+  geom_text(aes(label = .group), nudge_y = 0, nudge_x = 3)
+
+usda_mixed_cld$.group <- gsub(" ", "", usda_mixed_cld$.group, fixed = TRUE)
+
+usda_mixed_cld <- usda_mixed_cld %>%
+  arrange(emmean) %>% 
+  rownames_to_column("order") %>% 
+  mutate(order = as.numeric(order))
+
+usda_mixed_cld <- usda_mixed_cld %>% mutate(State = factor(State, levels = usda_mixed_cld$State[usda_mixed_cld$order]))
+# ggplot 
+```
+
+***  
+
+```{r better mixedeff viz}
+usda_mixed_cld %>%
+  ggplot(aes(emmean, State))+
+  geom_errorbarh(aes(xmin = asymp.LCL, xmax = asymp.UCL), color = "grey70", height = .2)+
+  geom_point()+
+  geom_text(aes(label = .group, x = emmean + nchar(.group)*1.2), nudge_y = 0.1)+
+  labs(x = expression(Mean~Yield~(Bu~acre^{-1})))+
+  theme_bw()+
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank()) -> usda_mixed_ggplot; usda_mixed_ggplot 
+```
+
+
+
+# References  
+
+* **Model building:** Check out Chapter 10 in *Hobbs, N. T., and Hooten, M. B. (2015). Bayesian models: a statistical primer for ecologists. Princeton University Press.*  
+
+* [Dr. Leo Bastos 2019 R workshop](https://www.youtube.com/watch?v=8xyi9By3fM4)  
