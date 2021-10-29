@@ -1,0 +1,103 @@
+---
+title: "Day 8"
+author: "J. Lacasa"
+date: "10/28/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+```
+
+```{r library}
+library(tidyverse)
+library(lme4)
+```
+
+```{r data}
+soybeans <- readxl::read_xlsx("../../../GitHub/Rworkshop_2021/data/soybeans.xlsx", sheet = "Summary") %>% 
+  rename(yield = `Yield@13% bu/ac`) %>% 
+  mutate(yield = yield %>% as.numeric())
+
+soybeans %>% 
+  ggplot(aes(cut_number(Maturity,2), yield))+
+  geom_boxplot()+
+  facet_wrap(~Loc)
+```
+
+```{r groups}
+soybeans <- soybeans %>% 
+  mutate(m_group = cut_number(Maturity, 2)) %>% 
+  filter(between(Year, 2014, 2015))
+
+soybeans %>% 
+  ggplot(aes(m_group, yield))+
+  geom_boxplot()+
+  facet_grid(Year~Loc)
+```
+
+```{r lm}
+
+lm1 <- lm(yield ~ m_group*Loc + factor(Block) + factor(Year) -1,
+          data = soybeans)
+summary(lm1)
+
+```
+
+# LME  
+
+```{r lme}
+lmem1 <- lmer(yield ~ 1 + m_group + (1|Loc), data = soybeans)
+summary(lmem1)
+```
+
+```{r}
+lmem2 <- lmer(yield ~ 1 + m_group + (1|Loc/Year), data = soybeans)
+summary(lmem2)
+```
+
+```{r}
+lmem3 <- lmer(yield ~ 1 + m_group + (1|Loc/Year/Block),
+              data = soybeans)
+summary(lmem3)
+```
+
+```{r}
+# nlme::lme()
+```
+
+## Look at the residuals  
+
+
+## Predict  
+
+```{r}
+lmem3 
+
+pred_df <- data.frame(m_group = "(4.2,5.6]",
+                      Block = 1,
+                      Year =2014, 
+                      Loc ="Hutchinson")
+pred_df
+data.frame(x= soybeans$yield, y= predict(lmem3, soybeans)) %>%
+  ggplot(aes(x,y))+
+  geom_point()+
+  geom_abline(slope=1)+
+  labs(y = "predictions",
+       x= "obs")
+```
+
+```{r}
+summary(lmem1)
+```
+
+```{r}
+#check the model performance
+library(metrica)
+
+metrica::metrics.summary(obs = soybeans$yield[1:170],
+                         pred = predict(lmem3, soybeans)[1:170]) %>% 
+  pivot_longer(cols=B0:lambda)
+```
+
+

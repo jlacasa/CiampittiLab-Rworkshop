@@ -1,0 +1,176 @@
+---
+title: "Week 6"
+author: "J. Lacasa"
+date: "10/14/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Packages  
+```{r libs}
+library(tidyverse)
+library(car)
+library(multcomp)
+library(multcompView)
+library(emmeans)
+```
+# Data  
+```{r data}
+usda <- read.csv("../data/USDAsurvey_00-18.csv")
+legume <- read.csv("../data/legume.csv")
+```
+
+```{r}
+colnames(legume)
+nrow(legume)
+unique(legume$Crop_Species_Scientific_Name)
+legume$Crop_Species_Scientific_Name %>% unique()
+
+legume %>% 
+  group_by(Crop_Species_Scientific_Name) %>% 
+  summarise(n = length(Crop_Yield_Grain)) %>% 
+  ggplot(aes(n))+
+  geom_histogram()
+```
+
+```{r filter >200}
+legume1 <- legume %>%
+  group_by(Crop_Species_Scientific_Name) %>% 
+  mutate(n = length(Crop_Yield_Grain)) %>%
+  ungroup() %>% 
+  filter(n %>% between(200, 300)) # n >= 200 & n <=300
+```
+
+```{r eda 2}
+legume1 %>% 
+  drop_na(Crop_Biomass_Aerial) %>% 
+  ggplot(aes(Crop_Biomass_Aerial, Crop_Yield_Grain))+
+  geom_point(aes(fill = Crop_Species_Scientific_Name),
+             shape = 21,
+             alpha = .8)+
+  geom_smooth(aes(color = Crop_Species_Scientific_Name),
+              method = 'lm', se = FALSE, formula = y~x-1)
+```
+
+```{r}
+legume1 %>% 
+  ggplot(aes(x = Crop_Species_Scientific_Name, y = Crop_Yield_Grain))+
+  geom_boxplot()
+```
+
+```{r lms}
+ # y ~ 1 + x 
+m1 <- lm(Crop_Yield_Grain ~ Crop_Species_Scientific_Name -1,
+         data = legume1)
+summary(m1)
+# anova()
+
+# Prefer using type III tests
+car::Anova(m1, type = 3)
+# reject H0: at least one mean is different
+```
+
+```{r ad hoc mean comp}
+legume_means <- emmeans(m1, specs = ~ Crop_Species_Scientific_Name)
+
+legume_means_comp <- cld(legume_means,
+                         level = .05,
+                         decreasing = TRUE,
+                         adjust = "none",
+                         Letters = "abcdefgh")
+class(legume_means_comp)
+
+legume_means_comp %>% 
+  ggplot(aes(emmean, Crop_Species_Scientific_Name))+
+  geom_errorbarh(aes(xmin = lower.CL, xmax = upper.CL), height = 0)+
+  geom_point(aes())+
+  geom_text(aes(label = .group), nudge_x = 0.09) 
+
+```
+
+```{r}
+summary( lm(Crop_Yield_Grain ~ Crop_Species_Scientific_Name,
+         data = legume1))
+```
+
+# Day 7  
+
+```{r cont reg}
+cont_model <-  lm(Crop_Yield_Grain ~ 
+                    Crop_Biomass_Aerial:Crop_Species_Scientific_Name -1, 
+   data = legume1) 
+summary(cont_model)
+confint(cont_model)
+```
+
+```{r}
+lm(Crop_Yield_Grain ~ 
+                    Crop_Biomass_Aerial * Crop_Species_Scientific_Name -1, 
+   data = legume1) %>% summary()
+```
+
+```{r usda2}
+usda
+lm
+
+```
+
+
+## Linear Mixed Effects  
+
+**Fixed effects**  
+Effect ON the variable. (not affecting the error, just the expected Y value).   
+
+**Random effects**  
+* NOT AFFECTING the expected Y value.  
+* Effect on the “variability” of the variable (Sigma).  
+* Most basic component is the RESIDUALS (e) given by replications/repetitions.  
+* Also BLOCKS.  
+
+***  
+```{r Expected marginal means}
+options('contrasts')
+options(contrasts = c("contr.sum", "contr.poly")) # set the contrasts
+options('contrasts')
+lm(Value ~ State , data = usda)
+
+usda <- usda %>% mutate(fYear = factor(Year))
+
+usda_mixed <- lmer(Value ~ State + (1|State/fYear),
+                   data = usda)
+
+usda_mixed_means <- emmeans(usda_mixed, #~State|Year,
+                      specs = pairwise ~ State)
+
+```
+
+***  
+
+Random effects are iid ~ N(0,var1)  
+```{r QQ plot for random effects}
+randef <- ranef(usda_mixed)[[1]] 
+
+randef %>% 
+  ggplot(aes(sample=`(Intercept)`))+
+  stat_qq()+
+  stat_qq_line()
+```
+
+***  
+
+```{r pairwise comp}
+#Set up a compact letter display of all pair-wise comparisons
+cld(usda_mixed_means,
+    adjust = "none",
+    Letters = letters,
+    reversed = TRUE,
+    comparisons = TRUE) -> usda_mixed_cld
+
+# default plot 
+
+# ggplot -> necessary steps ?
+```
+
