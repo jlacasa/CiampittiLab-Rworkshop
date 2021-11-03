@@ -1,0 +1,80 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+# Packages  
+
+```{r libs}
+library(tidyverse)
+library(lme4)
+library(daymetr)
+```
+# Data  
+```{r data}
+soybeans <- readxl::read_xlsx("../data/soybeans.xlsx", sheet = "Summary (2)") %>% 
+  rename(yield = `Yield@13% bu/ac`, 
+         pd = `Plant Date`,
+         mg = Maturity) %>% 
+  mutate(yield = as.numeric(yield),
+         Loc = ifelse(Loc=="North_Farm", "Manhattan", Loc))
+colnames(soybeans)
+str(soybeans)
+```
+
+```{r set theme}
+theme_set(theme_classic())
+```
+
+```{r viz1}
+# devtools::install_github("karthik/wesanderson")
+soybeans %>% 
+  ggplot(aes(DOY, yield))+
+  geom_point(aes(fill = Weight),shape = 21)+
+  scale_fill_gradientn(colours = wesanderson:: wes_palette(
+    "Zissou1", 100, type = "continuous"))+
+  theme(aspect.ratio = .85,
+                axis.title = element_text(size=14))
+```
+
+```{r viz2}
+soybeans %>% 
+  ggplot(aes(DOY, yield))+
+  geom_point(aes(fill = factor(Year)),shape = 21)+
+  facet_wrap(~Loc)+
+  scale_fill_manual(values = wesanderson::wes_palette("FantasticFox1"))+
+  theme(aspect.ratio = .85,
+                axis.title = element_text(size=14))
+```
+
+
+```{r coords}
+coords <- data.frame(Loc = c("Manhattan", "Ottawa","Topeka","Parsons"),
+                     lat =c(39.217795, 38.538687, 39.07612, 37.220435),
+                     lon = c(-96.598682,-95.241784,-95.768379,-95.171074))
+#join dfs
+
+```
+
+# Set the locations in a map  
+
+```{r map}
+
+```
+
+# Map functions  
+```{r map f}
+soybeans %>% 
+  dplyr::select(Loc, lat, lon) %>% 
+  drop_na(lat) %>%
+  unique()
+```
+
+# Save many dataframes  
+
+
+# For loops  
+
+```{r}
+
+```
+
